@@ -38,33 +38,27 @@ class User {
   			$_SESSION['auth'] = 1;
   			$_SESSION['username'] = ucwords($username);
   			unset($_SESSION['failedAuth']);
+        $this->logAttempt($username, "good");
         unset($_SESSION['last_submit_time']);
   			header('Location: /home');
   			die;
   		} else {
   			if(isset($_SESSION['failedAuth'])) {
   				$_SESSION['failedAuth'] ++; //increment
-  		} else {
+          $this->logAttempt($username, "bad");
+  		  } else {
   				$_SESSION['failedAuth'] = 1;
-  		}
-      if ($_SESSION['failedAuth'] == 3 ){
-          // $lastSubmitTime = $_SESSION['last_submit_time'];
-          // $timeSinceLastSubmit = time() - $lastSubmitTime;
-
-          // if ($timeSinceLastSubmit < $cooldown) {
-          //     $remainingTime = $cooldown - $timeSinceLastSubmit;
-          //     $_SESSION['message'] = "You must wait 60 seconds before submitting again.";
-          // }
-          $_SESSION['message'] = "Too many failed attempts. Please try again in 60 seconds.";
-          // unset($_SESSION['failedAuth']);
-          header('Location: /login');
-          //$_SESSION['last_submit_time'] = time();
-      }
-		  header('Location: /login');
-		  die;
-	   }
+          $this->logAttempt($username, "bad");
+  		  }
+        if ($_SESSION['failedAuth'] > 3 ){// if its the 4th attempt he will be frozen
+          $_SESSION['message'] = "Too many failed attempts. Please try again in 5 seconds.";
+          header('Location: /freeze');
+          die;
+	     }
+        header('Location: /login');
+        die;
     }
-
+  }
   public function create($username, $password){
     
     $username = strtolower($username);
@@ -74,8 +68,8 @@ class User {
     $sql = "SELECT id FROM users WHERE username = ?";
     $stmt = $db->prepare($sql);
     $stmt->execute([$username]);
-
-    if ($stmt->rowCount() > 0) {
+    
+    if ($this->userExists($username, 'users') == true) {
         // Username already exists
         $_SESSION['regError'] = 1; 
         $_SESSION['regMessage'] = "Username already exists";
@@ -108,6 +102,44 @@ class User {
     unset($_SESSION['regSuccess']);
     unset($_SESSION['regError']);
   }
+  public function userExists($username,$table):bool{ // args gets username and table(which table  to check for the user existance)
+    
+    $username = strtolower($username);
+    $db = db_connect();
+    // Check if username already exists
+    $sql = "SELECT id FROM $table WHERE username = ?";
+    $stmt = $db->prepare($sql);
+    $stmt->execute([$username]);
+
+    if ($stmt->rowCount() > 0) {
+      // Username already exists
+      return true;
+    }else{
+      return false;
+    }
+  }
+
+  public function logAttempt($username, $attempt){ // args gets username and attempt type (good or bad)
+    $username = strtolower($username);
+    $db = db_connect();
+    
+
+    if($this->userExists($username,'attempts')){
+      $time = time();
+      $format = date('H:i:s', $time);
+      $sql = "INSERT INTO attempts (attempts, time) VALUES (?, ?)";
+      $stmt = $db -> prepare($sql);
+      $stmt->execute([$attempt, $format]);
+    }else{
+      $time = time();
+      $format = date('H:i:s', $time);
+      $sql = "INSERT INTO attempts (username, attempts, time) VALUES (?, ?, ?)";
+      $stmt = $db -> prepare($sql);
+
+      $stmt->execute([$username, $attempt, $format]);
+    }
+  }
 }
+
 
 

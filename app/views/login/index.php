@@ -70,11 +70,16 @@
 							<p><?php echo "Invalid Tries: "; echo $_SESSION['failedAuth']; ?></p>
 					<?php endif; ?>
 					
-					<?php if ($_SESSION['failedAuth'] > 2) : ?>
+					<?php if ($_SESSION['failedAuth'] > 3) : ?>
 									<p><?php echo htmlspecialchars($_SESSION['message']); ?></p>
-									<p><?php unset($_SESSION['failedAuth']); ?> </p> 
+									<?php unset($_SESSION['failedAuth']); ?>
 					<?php endif; ?>
 
+
+					<!-- <?php if (($_SESSION['time'] + strtotime("5 seconds"))<= date("H:i:s", $time)) : ?>
+									<p>working</p
+					<?php endif; ?> -->
+					
 					<!-- Registration Success Text  -->
 					<?php if (isset($_SESSION['regSuccess'])): ?>
 							<p><?php echo $_SESSION['regMessage'] ?></p>
@@ -82,7 +87,7 @@
 					<?php endif; ?>
 						<input type="text" name="username" placeholder="Username" required>
 						<input type="password" name="password" placeholder="Password" required>
-						<button type="submit">Login</button>
+							<p><button type="submit">Login</button></p>
 				</form>
 				<p><a href="/create">Don't have an account? Register here</a></p>
 		</div>
